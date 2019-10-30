@@ -265,11 +265,10 @@ endglobal
 # Class & Special Method Name Snippets #
 ########################################
 snippet net "pytorch deep learning network"b
-class ${1:MyNet}(nn.Module):
+class ${0:MyNet}(nn.Module):
 
 	def __init__(self):
-		super($1, self).__init()
-	
+		super($0, self).__init__()
 
 	def forward(self, x):
 		pass
