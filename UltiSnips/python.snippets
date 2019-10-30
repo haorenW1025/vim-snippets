@@ -264,6 +264,22 @@ endglobal
 ########################################
 # Class & Special Method Name Snippets #
 ########################################
+
+snippet cli "click client" b
+import click
+
+@click.command()
+@click.option('--${1:option}', type=${2:click_type}, help='${3:help_message}')
+def main($1):
+	`!p snip.rv = triple_quotes(snip)`${4:Docstring. }`!p snip.rv = triple_quotes(snip)`
+	${0:pass}
+
+if __name__ == "__main__":
+	# pylint: disable=no-value-for-parameter
+	main()
+endsnippet
+
+
 snippet net "pytorch deep learning network" b
 class ${1:MyNet}(nn.Module):
 
