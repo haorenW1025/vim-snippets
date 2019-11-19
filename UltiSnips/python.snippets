@@ -275,16 +275,11 @@ def main($1):
 	${0:pass}
 
 if __name__ == "__main__":
-	# pylint: disable=no-value-for-parameter
-	main()
-endsnippet
-
-snippet pylint "pylint disable" b
-# pylint: disable=no-value-for-parameter
+	main()  # type: ignore
 endsnippet
 
 snippet torchtrain "pytorch training snippet" b
-import torch
+import torch  # type: ignore
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
