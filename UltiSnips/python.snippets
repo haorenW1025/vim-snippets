@@ -324,85 +324,87 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from tensorboardX import SummaryWriter
+from sklearn.metrics import accuracy_score
 
 
-#  import data
-#  import model.Net as model
+# pylint: disable=no-member
 
 """ setup GPU """
 DEVICE = torch.device("cuda:0 " if torch.cuda.is_available() else "cpu")
 
 
-def save_model(model, save_path):
-	torch.save(model.state_dict(), save_path)
+class ${1:class_name}():
 
+	def __init__(self, train_loader, val_loader, ${2:model}, save_dir, learning_rate):
+		self.save_dir = save_dir
+		self.train_loader = train_loader
+		self.val_loader = val_loader
+		self.$2 = $2.to(DEVICE)
+		self.criterion = nn.${3:loss_function}()
+		self.optimizer = optim.${4:optimizer}(params=self.$2.parameters(),
+												lr=learning_rate)
+		self.writer = SummaryWriter(os.path.join(save_dir, 'train_info'))
 
-def train(data_dir: str, save_dir: str, total_epoch: int = 200, train_batch: int = 32, 
-		  test_batch: int = 1, learning_rate: float = 1e-4):
-	if not os.path.exists(save_dir):
-		os.makedirs(save_dir)
+	def save_model(self, save_path):
+		torch.save(self.model.state_dict(), save_path)
 
-	""" prepare dataloader """
-	print('===> prepare dataloader ...')
-	train_loader = torch.utils.data.DataLoader(data.DATA(mode='train', data_dir=data_dir),
-												batch_size=train_batch,
-												num_workers=4,
-												shuffle=True)
-	val_loader = torch.utils.data.DataLoader(data.DATA(mode='val', data_dir=data_dir),
-												batch_size=test_batch,
-												num_workers=4,
-												shuffle=False)
+	def train(self, total_epoch):
+		best_acc = 0
+		iters = 0
+		for epoch in range(1, total_epoch + 1):
+			self.$2.train()
+			for idx, (data, labels) in enumerate(self.train_loader):
+				data, labels = data.to(DEVICE), labels.to(DEVICE)
+				iter += 1
+				train_info = 'Epoch: [{0}][{1}/{2}]'.format(
+					epoch, idx+1, len(self.train_loader))
+				output = self.$2(data)
 
-	""" load model """
-	# TODO
-	#  model.to(DEVICE)
+				''' compute loss, backpropagation, update parameters '''
+				loss = self.criterion(output, labels)
+				self.optimizer.zero_grad()
+				loss.backward()
+				self.optimizer.step()
 
-	""" define loss """
-	# TODO
-	#  criterion = nn.CrossEntropyLoss()
+				self.writer.add_scalar('loss', loss.data.cpu().numpy(), iters)
+				train_info += ' loss: {:.4f}'.format(loss.data.cpu().numpy())
+				print(train_info, end='\r')
 
-	""" define optimizer """
-	# TODO
-	#  optimizer = torch.optim.Adam(
-	#  model.parameters(), lr=learning_rate, weight_decay=2e-4)
+			acc = self.validate()
+			self.writer.add_scalar('acc', acc, epoch)
+			print('\n')
+			print("EPOCH {}: ACC = {}".format(epoch, acc))
+			if acc > best_acc:
+				self.save_model(os.path.join(
+					self.save_dir, '$2_best.pth.tar'))
+				best_acc = acc
 
-	'''train model'''
-	iter = 0
-	best_acc = 0
-	loss_history = []
-	acc_history = []
-	for epoch in range(1, total_epoch + 1):
-		model.train()
-		for idx, (data, labels) in enumerate(train_loader):
-			data, labels = data.to(DEVICE), labels.to(DEVICE)
-			iter += 1
-			train_info = 'Epoch: [{0}][{1}/{2}]'.format(
-				epoch, idx+1, len(train_loader))
-			output = model(data)
+			''' save model '''
+			self.save_model(os.path.join(self.save_dir,
+							'$2_{}.pth.tar'.format(epoch)))
 
-			''' compute loss, backpropagation, update parameters '''
-			loss = criterion(output, labels)
-			optimizer.zero_grad()
-			loss.backward()
-			optimizer.step()
-			loss_history.append(loss)
-			train_info += ' loss: {:.4f}'.format(loss.data.cpu().numpy())
+	def validate(self):
+		self.$2.eval()
+		preds = []
+		labels = []
+		with torch.no_grad():
+			for _, (img, label) in enumerate(self.val_loader):
+				img = img.to(DEVICE)
+				pred = self.$2(img)
 
-		acc = evaluate(model, val_loader)
-		if acc > best_acc:
-			save_model(model, os.path.join(
-				args.save_dir, 'model_best.pth.tar'))
-			best_acc = acc
-		acc_history.append(acc)
+				_, pred = torch.max(pred, dim=1)
 
-		''' save model '''
-		save_model(model, os.path.join(args.save_dir,
-									'model_{}.pth.tar'.format(epoch)))
+				pred = pred.cpu().numpy().squeeze()
+				label = label.numpy().squeeze()
 
-	if not os.path.exists('result'):
-		os.makedirs('result')
-	np.save('result/loss.npy', loss_history)
-	np.save('result/acc.npy', acc_history)
+				preds.append(pred)
+				labels.append(label)
+		labels = np.concatenate(labels)
+		preds = np.concatenate(preds)
+		
+		return accuracy_score(labels, preds)
+
 endsnippet
 
 snippet torchnet "pytorch network snippet" b
